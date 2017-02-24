@@ -1,0 +1,2 @@
+
+require('./templatesUtils').buildTemplatesDist()
