@@ -1,61 +1,54 @@
+const express = require("express");
+const nunjucks = require("nunjucks");
 
-const express = require('express');
-const nunjucks = require('nunjucks');
-
-const config = require('../config');
-
+const config = require("../config");
 
 function runPreviewServer() {
-    const app = express();
+  const app = express();
 
-    const templatesPath = config.templatesPath;
-    const previewPort = config.previewPort;
+  const templatesPath = config.templatesPath;
+  const previewPort = config.previewPort;
 
-    nunjucks.configure(templatesPath, {
-        autoescape: true,
-        express: app,
-        watch: true
-    });
+  nunjucks.configure(templatesPath, {
+    autoescape: true,
+    express: app,
+    watch: true
+  });
 
+  function prepareTemplateContext(data) {
+    const page = data.fields.reduce((result, field) => {
+      return Object.assign({}, result, {
+        [field.id]: field.defaultValue
+      });
+    }, {});
 
-    function prepareTemplateContext(data) {
+    return {
+      page
+    };
+  }
 
-        const templateContext =  data.fields.reduce((result, field) => {
-            return Object.assign({}, result, {
-                [field.id]: field.defaultValue
-            });
-        }, {});
+  app.get("/", function(req, res) {
+    const templateID = req.params.templateID;
 
-        return templateContext;
-    }
+    res.send(
+      `You have to specify templateID in URL path: localhost:${previewPort}/templateID`
+    );
+  });
 
+  app.get("/:templateID", function(req, res) {
+    const templateID = req.params.templateID;
 
-    app.get('/', function (req, res) {
+    res.render(
+      `${templateID}.html`,
+      prepareTemplateContext(require(`${templatesPath}/${templateID}.json`))
+    );
+  });
 
-        const templateID = req.params.templateID;
-
-        res.send(`You have to specify templateID in URL path: localhost:${previewPort}/templateID`)
-
-    })
-
-    app.get('/:templateID', function (req, res) {
-
-        const templateID = req.params.templateID;
-
-        res.render(`${templateID}.html`,
-            prepareTemplateContext(
-                require(`${templatesPath}/${templateID}.json`)
-            )
-        );
-
-    })
-
-    app.listen(previewPort, function () {
-      console.log(`Templates Preview mode listening on port ${previewPort}!`)
-    })
-
+  app.listen(previewPort, function() {
+    console.log(`Templates Preview mode listening on port ${previewPort}!`);
+  });
 }
 
 module.exports = {
-    runPreviewServer
-}
+  runPreviewServer
+};
